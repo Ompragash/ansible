@@ -900,6 +900,18 @@ class GalaxyCLI(CLI):
 
         obj_name = context.CLIARGS['{0}_name'.format(galaxy_type)]
 
+        repo_download_path = os.path.expanduser('~/.ansible/tmp')
+
+        def git_repo_download(remote_repo_url, download_path):
+            # GIT Repositories that will be used as a skeleton to create Role or
+            # Collection will be temporarily downloaded to ~/.ansible/tmp directory.
+
+            # create ~/.ansible/tmp if not present
+            if not os.path.exists(download_path):
+                os.makedirs(download_path)
+
+            os.system('git -C %s clone %s > /dev/null 2>&1' % (download_path, remote_repo_url))
+
         inject_data = dict(
             description='your {0} description'.format(galaxy_type),
             ansible_plugin_list_dir=get_versioned_doclink('plugins/plugins.html'),
@@ -949,6 +961,12 @@ class GalaxyCLI(CLI):
                                    "You can use --force to re-initialize this directory,\n"
                                    "however it will reset any main.yml files that may have\n"
                                    "been modified there already." % to_native(obj_path))
+
+        if 'git' in obj_skeleton:
+            git_repo_download(obj_skeleton, repo_download_path)
+            obj_skeleton = obj_skeleton.split('/')
+            git_repo_name = obj_skeleton[-1]
+            obj_skeleton = repo_download_path + '/' + git_repo_name
 
         if obj_skeleton is not None:
             own_skeleton = False
@@ -1021,6 +1039,9 @@ class GalaxyCLI(CLI):
                 b_dir_path = to_bytes(os.path.join(obj_path, rel_root, d), errors='surrogate_or_strict')
                 if not os.path.exists(b_dir_path):
                     os.makedirs(b_dir_path)
+        
+        if git_repo_name in os.listdir(repo_download_path):
+            shutil.rmtree(obj_skeleton)
 
         display.display("- %s %s was created successfully" % (galaxy_type.title(), obj_name))
 
