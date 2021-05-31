@@ -270,6 +270,8 @@ class GalaxyCLI(CLI):
         obj_name_kwargs = {}
         if galaxy_type == 'collection':
             obj_name_kwargs['type'] = validate_collection_name
+            init_parser.add_argument('--type', dest='collection_type', action='store', default='default',
+                                     help="Initialize using an alternate collection type. Valid types include: 'community'.")
         init_parser.add_argument('{0}_name'.format(galaxy_type), help='{0} name'.format(galaxy_type.capitalize()),
                                  **obj_name_kwargs)
 
@@ -900,17 +902,17 @@ class GalaxyCLI(CLI):
 
         obj_name = context.CLIARGS['{0}_name'.format(galaxy_type)]
 
-        repo_download_path = os.path.expanduser('~/.ansible/tmp')
+        #repo_download_path = os.path.expanduser('~/.ansible/tmp')
 
-        def git_repo_download(remote_repo_url, download_path):
+        #def git_repo_download(remote_repo_url, download_path):
             # GIT Repositories that will be used as a skeleton to create Role or
             # Collection will be temporarily downloaded to ~/.ansible/tmp directory.
 
             # create ~/.ansible/tmp if not present
-            if not os.path.exists(download_path):
-                os.makedirs(download_path)
+        #    if not os.path.exists(download_path):
+        #        os.makedirs(download_path)
 
-            os.system('git -C %s clone %s > /dev/null 2>&1' % (download_path, remote_repo_url))
+        #    os.system('git -C %s clone %s > /dev/null 2>&1' % (download_path, remote_repo_url))
 
         inject_data = dict(
             description='your {0} description'.format(galaxy_type),
@@ -938,6 +940,7 @@ class GalaxyCLI(CLI):
             inject_data.update(dict(
                 namespace=namespace,
                 collection_name=collection_name,
+                collection_type=context.CLIARGS['collection_type'],
                 version='1.0.0',
                 readme='README.md',
                 authors=['your name <example@domain.com>'],
@@ -949,6 +952,7 @@ class GalaxyCLI(CLI):
                 build_ignore=[],
             ))
 
+            print(inject_data)
             obj_path = os.path.join(init_path, namespace, collection_name)
 
         b_obj_path = to_bytes(obj_path, errors='surrogate_or_strict')
@@ -962,18 +966,23 @@ class GalaxyCLI(CLI):
                                    "however it will reset any main.yml files that may have\n"
                                    "been modified there already." % to_native(obj_path))
 
-        if 'git' in obj_skeleton:
-            git_repo_download(obj_skeleton, repo_download_path)
-            obj_skeleton = obj_skeleton.split('/')
-            git_repo_name = obj_skeleton[-1]
-            obj_skeleton = repo_download_path + '/' + git_repo_name
+        #if 'git' in obj_skeleton:
+        #    git_repo_download(obj_skeleton, repo_download_path)
+        #    obj_skeleton = obj_skeleton.split('/')
+        #    git_repo_name = obj_skeleton[-1]
+        #    obj_skeleton = repo_download_path + '/' + git_repo_name
 
         if obj_skeleton is not None:
             own_skeleton = False
             skeleton_ignore_expressions = C.GALAXY_ROLE_SKELETON_IGNORE
+        elif galaxy_type == 'collection' and inject_data['collection_type'] in ['community']:
+            own_skeleton = False
+            obj_skeleton = self.galaxy.default_role_skeleton_path
+            skeleton_ignore_expressions = ['^.*/.git_keep$']
         else:
             own_skeleton = True
             obj_skeleton = self.galaxy.default_role_skeleton_path
+            print(obj_skeleton)
             skeleton_ignore_expressions = ['^.*/.git_keep$']
 
         obj_skeleton = os.path.expanduser(obj_skeleton)
@@ -986,7 +995,7 @@ class GalaxyCLI(CLI):
 
         loader = DataLoader()
         templar = Templar(loader, variables=inject_data)
-
+        #import pdb; pdb.set_trace()
         # create role directory
         if not os.path.exists(b_obj_path):
             os.makedirs(b_obj_path)
@@ -1040,8 +1049,8 @@ class GalaxyCLI(CLI):
                 if not os.path.exists(b_dir_path):
                     os.makedirs(b_dir_path)
         
-        if git_repo_name in os.listdir(repo_download_path):
-            shutil.rmtree(obj_skeleton)
+        #if git_repo_name in os.listdir(repo_download_path):
+        #    shutil.rmtree(obj_skeleton)
 
         display.display("- %s %s was created successfully" % (galaxy_type.title(), obj_name))
 
