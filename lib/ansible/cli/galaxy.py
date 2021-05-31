@@ -270,6 +270,8 @@ class GalaxyCLI(CLI):
         obj_name_kwargs = {}
         if galaxy_type == 'collection':
             obj_name_kwargs['type'] = validate_collection_name
+            init_parser.add_argument('--type', dest='collection_type', action='store', default='default',
+                                     help="Initialize using an alternate collection type. Valid type include: 'community'.")
         init_parser.add_argument('{0}_name'.format(galaxy_type), help='{0} name'.format(galaxy_type.capitalize()),
                                  **obj_name_kwargs)
 
@@ -926,6 +928,7 @@ class GalaxyCLI(CLI):
             inject_data.update(dict(
                 namespace=namespace,
                 collection_name=collection_name,
+                collection_type=context.CLIARGS['collection_type'],
                 version='1.0.0',
                 readme='README.md',
                 authors=['your name <example@domain.com>'],
@@ -953,6 +956,10 @@ class GalaxyCLI(CLI):
         if obj_skeleton is not None:
             own_skeleton = False
             skeleton_ignore_expressions = C.GALAXY_ROLE_SKELETON_IGNORE
+        elif galaxy_type == 'collection' and inject_data['collection_type'] == 'community':
+            own_skeleton = False
+            obj_skeleton = self.galaxy.default_role_skeleton_path
+            skeleton_ignore_expressions = ['^.*/.git_keep$']
         else:
             own_skeleton = True
             obj_skeleton = self.galaxy.default_role_skeleton_path
