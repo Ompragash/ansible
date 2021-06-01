@@ -273,8 +273,6 @@ class GalaxyCLI(CLI):
         obj_name_kwargs = {}
         if galaxy_type == 'collection':
             obj_name_kwargs['type'] = validate_collection_name
-            init_parser.add_argument('--type', dest='collection_type', action='store', default='default',
-                                     help="Initialize using an alternate collection type. Valid type include: 'community'.")
         init_parser.add_argument('{0}_name'.format(galaxy_type), help='{0} name'.format(galaxy_type.capitalize()),
                                  **obj_name_kwargs)
 

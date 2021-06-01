@@ -55,11 +55,7 @@ class Galaxy(object):
 
         # load data path for resource usage
         this_dir, this_filename = os.path.split(__file__)
-        
-        if context.CLIARGS.get('type') == 'role':
-            type_path = context.CLIARGS.get('role_type', 'default')
-        else:
-            type_path = context.CLIARGS.get('collection_type', 'default')
+        type_path = context.CLIARGS.get('{0}_type'.format(context.CLIARGS.get('type')), 'default')
 
         if type_path == 'default':
             type_path = os.path.join(type_path, context.CLIARGS.get('type'))
